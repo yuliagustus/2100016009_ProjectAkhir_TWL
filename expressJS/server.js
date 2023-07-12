@@ -10,7 +10,7 @@ app.use(cors())
 app.use(express.json())
 
 // MongoDB URI
-const mongoURI = 'mongodb+srv://yuliana:yuliana@cluster0.hnojk2b.mongodb.net/';
+const mongoURI = 'mongodb://127.0.0.1:27017/twl';
 
 // Connect to MongoDB
 mongoose

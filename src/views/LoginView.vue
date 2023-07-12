@@ -10,7 +10,7 @@
       <br>
       <button type="submit">Login</button>
     </form>
-    <p>Belum punya akun? <a href="/register">Register</a></p>
+    <p>Don't have an account? <a href="/register">Register</a></p>
   </div>
 </template>
 

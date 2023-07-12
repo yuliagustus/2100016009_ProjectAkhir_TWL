@@ -1,20 +1,20 @@
 <template>
   <div class="container">
     <h1>Todos</h1>
-    <form @submit.prevent="createTodo">
+    <form @submit.prevent="submitForm">
       <div class="form-group">
         <label for="kegiatan">Kegiatan</label>
-        <input type="text" class="form-control" v-model="newTodo.kegiatan" required>
+        <input type="text" class="form-control" v-model="formData.kegiatan" required>
       </div>
       <div class="form-group">
         <label for="date">Date</label>
-        <input type="date" class="form-control" v-model="newTodo.date" required>
+        <input type="date" class="form-control" v-model="formData.date" required>
       </div>
       <div class="form-group">
         <label for="nama">Nama</label>
-        <input type="text" class="form-control" v-model="newTodo.nama" required>
+        <input type="text" class="form-control" v-model="formData.nama" required>
       </div>
-      <button type="submit" class="btn btn-primary">Add Todo</button>
+      <button type="submit" class="btn btn-primary">{{ editingTodoId ? 'Update Todo' : 'Add Todo' }}</button>
     </form>
     <table class="table mt-4">
       <thead>
@@ -33,6 +33,7 @@
           <td>{{ todo.date }}</td>
           <td>{{ todo.nama }}</td>
           <td>
+            <button class="btn btn-sm btn-primary" @click="editTodoForm(todo)">Edit</button>
             <button class="btn btn-sm btn-danger" @click="deleteTodo(todo._id)">Delete</button>
           </td>
         </tr>
@@ -45,78 +46,84 @@
 export default {
   data() {
     return {
-      todos: [], // Array to store todos
-      newTodo: { kegiatan: '', date: '', nama: '' } // Object to store new todo data
+      todos: [],
+      formData: { kegiatan: '', date: '', nama: '' },
+      editingTodoId: null,
+      token: null
     };
   },
   mounted() {
-    // Fetch all todos when the component is mounted
+    this.token = localStorage.getItem('token');
     this.fetchTodos();
   },
   methods: {
-  fetchTodos() {
-    const token = localStorage.getItem('token'); // Get the token from localStorage
-
-    // Make a GET request to fetch all todos
-    // Replace '/api/todos' with your API endpoint
-    fetch('http://localhost:5000/todo/list', {
-      headers: {
-        'Authorization': `Bearer ${token}` // Include the token in the Authorization header
-      }
-    })
-      .then(response => response.json())
-      .then(data => {
-        this.todos = data;
-      })
-      .catch(error => {
-        console.error('Failed to fetch todos:', error);
-      });
-  },
-
-  createTodo() {
-    const token = localStorage.getItem('token'); // Get the token from localStorage
-
-    // Make a POST request to create a new todo
-    // Replace '/api/todos' with your API endpoint
-    fetch('http://localhost:5000/todo/list', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Include the token in the Authorization header
-      },
-      body: JSON.stringify(this.newTodo)
-    })
-      .then(response => response.json())
-      .then(data => {
-        this.todos.push(data);
-        this.newTodo = { kegiatan: '', date: '', nama: '' };
-      })
-      .catch(error => {
-        console.error('Failed to create todo:', error);
-      });
-  },
-
-  deleteTodo(id) {
-    const token = localStorage.getItem('token'); // Get the token from localStorage
-
-    // Make a DELETE request to delete a todo
-    // Replace '/api/todos' with your API endpoint
-    fetch(`http://localhost:5000/todo/list/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}` // Include the token in the Authorization header
-      }
-    })
-      .then(response => {
-        if (response.ok) {
-          this.todos = this.todos.filter(todo => todo._id !== id);
-        } else {
-          console.error('Failed to delete todo:', response.status);
+    fetchTodos() {
+      fetch('http://localhost:5000/todo/list', {
+        headers: {
+          'Authorization': 'Bearer ' + this.token
         }
       })
-      .catch(error => {
-        console.error('Failed to delete todo:', error);
+        .then(response => response.json())
+        .then(data => {
+          this.todos = data;
+        })
+        .catch(error => {
+          console.error('Failed to fetch todos:', error);
         });
+    },
+    submitForm() {
+      const endpoint = this.editingTodoId ? `http://localhost:5000/todo/list/${this.editingTodoId}` : 'http://localhost:5000/todo/list';
+      const method = this.editingTodoId ? 'PUT' : 'POST';
+
+      fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + this.token
+        },
+        body: JSON.stringify(this.formData)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (this.editingTodoId) {
+            const index = this.todos.findIndex(todo => todo._id === this.editingTodoId);
+            this.todos.splice(index, 1, data);
+            this.editingTodoId = null;
+          } else {
+            this.todos.push(data);
+          }
+          this.resetForm();
+        })
+        .catch(error => {
+          console.error('Failed to save todo:', error);
+        });
+    },
+    editTodoForm(todo) {
+      this.editingTodoId = todo._id;
+      this.formData.kegiatan = todo.kegiatan;
+      this.formData.date = todo.date;
+      this.formData.nama = todo.nama;
+    },
+    deleteTodo(id) {
+      fetch(`http://localhost:5000/todo/list/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': 'Bearer ' + this.token
+        }
+      })
+        .then(response => {
+          if (response.ok) {
+            this.todos = this.todos.filter(todo => todo._id !== id);
+          } else {
+            console.error('Failed to delete todo:', response.status);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to delete todo:', error);
+        });
+    },
+    resetForm() {
+      this.formData = { kegiatan: '', date: '', nama: '' };
     }
   }
 };
