@@ -39,6 +39,8 @@
         </tr>
       </tbody>
     </table>
+    <!-- Ganti tombol logout dengan tautan teks -->
+    <p class="logout-link" @click="logout">Logout</p>
   </div>
 </template>
 
@@ -124,6 +126,10 @@ export default {
     },
     resetForm() {
       this.formData = { kegiatan: '', date: '', nama: '' };
+    },
+    logout() {
+      localStorage.removeItem('token');
+      window.location.href = '/login'; // Ganti '/login' dengan URL halaman login sebenarnya
     }
   }
 };
@@ -185,5 +191,11 @@ th {
 .btn-sm {
   padding: 5px 10px;
   font-size: 12px;
+}
+
+.logout-link {
+  color: blue;
+  text-decoration: underline;
+  cursor: pointer;
 }
 </style>
